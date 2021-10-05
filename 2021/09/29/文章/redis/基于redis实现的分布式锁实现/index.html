@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  
+  <title>基于redis实现的分布式锁实现 | Hexo</title>
+  <meta name="description" content="基于redis实现的分布式锁实现什么是锁这里需要引入一个话题，什么是锁？其实说到锁在我们的现实生活中非常的常见，比如密码锁，指纹锁，他是为了保证家中物资的安全性的一道保障。而在我们的计算机领域中，其实也有锁的概念，他的目的与上相似，都是为了保证数据的最终一直性，当然在单个线程锁是没有太大作用，但是若出现多个线程之间对某个资源进行竞争的时候，那么锁的存在就很有意义。那么刚才所提到的是针对与单体服务的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于redis实现的分布式锁实现">
+<meta property="og:url" content="http://example.com/2021/09/29/%E6%96%87%E7%AB%A0/redis/%E5%9F%BA%E4%BA%8Eredis%E5%AE%9E%E7%8E%B0%E7%9A%84%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E5%AE%9E%E7%8E%B0/index.html">
+<meta property="og:site_name" content="achims的小木屋">
+<meta property="og:description" content="基于redis实现的分布式锁实现什么是锁这里需要引入一个话题，什么是锁？其实说到锁在我们的现实生活中非常的常见，比如密码锁，指纹锁，他是为了保证家中物资的安全性的一道保障。而在我们的计算机领域中，其实也有锁的概念，他的目的与上相似，都是为了保证数据的最终一直性，当然在单个线程锁是没有太大作用，但是若出现多个线程之间对某个资源进行竞争的时候，那么锁的存在就很有意义。那么刚才所提到的是针对与单体服务的">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fimg2018.cnblogs.com%2Fblog%2F1464190%2F201908%2F1464190-20190814094705239-1223189079.png&refer=http%3A%2F%2Fimg2018.cnblogs.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1623039664&t=2255f81493bcf9803fd214711ca7ba63">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190328230407942.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0ppU2h1aVNhblFpYW5MaQ==,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2021-09-29T12:51:11.000Z">
+<meta property="article:modified_time" content="2021-10-05T14:56:36.359Z">
+<meta property="article:author" content="achims">
+<meta property="article:tag" content="redis">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fimg2018.cnblogs.com%2Fblog%2F1464190%2F201908%2F1464190-20190814094705239-1223189079.png&refer=http%3A%2F%2Fimg2018.cnblogs.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1623039664&t=2255f81493bcf9803fd214711ca7ba63">
+  <!-- Canonical links -->
+  <link rel="canonical" href="http://example.com/2021/09/29/%E6%96%87%E7%AB%A0/redis/%E5%9F%BA%E4%BA%8Eredis%E5%AE%9E%E7%8E%B0%E7%9A%84%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E5%AE%9E%E7%8E%B0/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="achims的小木屋" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/OK.jpg" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://gitee.com/achims" target="_blank">
+          <img class="img-circle img-rotate" src="/images/OK.jpg" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">achims</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">achims的小木屋</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> beijing, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="搜索" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="想要查找什么..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav ">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="/.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">首页</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">归档</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">分类</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">标签</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="/repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">项目</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-books">
+          <a href="/books">
+            
+            <i class="icon icon-book-fill"></i>
+            
+            <span class="menu-title">书单</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-links">
+          <a href="/links">
+            
+            <i class="icon icon-friendship"></i>
+            
+            <span class="menu-title">友链</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">关于</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <ul class="social-links">
+    	
+        <li><a href="https://gitee.com/achims" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="https://www.behance.net/cofess" target="_blank" title="Behance" data-toggle=tooltip data-placement=top><i class="icon icon-behance"></i></a></li>
+        
+        <li><a href="/atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">公告</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>欢迎交流与分享经验 目前很多文章没有搬运，等熟悉hexo后会陆陆续续把文章和代码搬过来!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget-body">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A4%9A%E7%BA%BF%E7%A8%8B/">多线程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BB%84%E4%BB%B6/">组件</a><span class="category-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget-body">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/redis/" rel="tag">redis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" rel="tag">多线程</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BB%84%E4%BB%B6/" rel="tag">组件</a><span class="tag-list-count">1</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget-body tagcloud">
+      <a href="/tags/redis/" style="font-size: 13px;">redis</a> <a href="/tags/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" style="font-size: 14px;">多线程</a> <a href="/tags/%E7%BB%84%E4%BB%B6/" style="font-size: 13px;">组件</a>
+    </div>
+  </div>
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/09/">九月 2021</a><span class="archive-list-count">4</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="/categories/redis/">redis</a>
+              </p>
+              <p class="item-title">
+                <a href="/2021/09/29/%E6%96%87%E7%AB%A0/redis/%E5%9F%BA%E4%BA%8Eredis%E5%AE%9E%E7%8E%B0%E7%9A%84%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E5%AE%9E%E7%8E%B0/" class="title">基于redis实现的分布式锁实现</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2021-09-29T12:51:11.000Z" itemprop="datePublished">2021-09-29</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="/categories/%E5%A4%9A%E7%BA%BF%E7%A8%8B/">多线程</a>
+              </p>
+              <p class="item-title">
+                <a href="/2021/09/29/%E6%96%87%E7%AB%A0/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E5%A4%9A%E7%BA%BF%E7%A8%8B%E8%AE%B2%E8%A7%A3/" class="title">java 多线程理论篇章</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2021-09-29T12:51:11.000Z" itemprop="datePublished">2021-09-29</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="/categories/%E5%A4%9A%E7%BA%BF%E7%A8%8B/">多线程</a>
+              </p>
+              <p class="item-title">
+                <a href="/2021/09/29/%E6%96%87%E7%AB%A0/%E5%A4%9A%E7%BA%BF%E7%A8%8B/ThreadLocal/" class="title">ThreadLocal</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2021-09-29T12:51:11.000Z" itemprop="datePublished">2021-09-29</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                <a class="category-link" href="/categories/%E7%BB%84%E4%BB%B6/">组件</a>
+              </p>
+              <p class="item-title">
+                <a href="/2021/09/29/%E7%BB%84%E4%BB%B6/spring-validator/" class="title">spring-validator验证框架的使用</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2021-09-29T12:51:11.000Z" itemprop="datePublished">2021-09-29</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<aside class="sidebar sidebar-toc collapse" id="collapseToc" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    <nav id="toc" class="article-toc">
+      <h3 class="toc-title">文章目录</h3>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%BA%E4%BA%8Eredis%E5%AE%9E%E7%8E%B0%E7%9A%84%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">1.</span> <span class="toc-text">基于redis实现的分布式锁实现</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E9%94%81"><span class="toc-number">2.</span> <span class="toc-text">什么是锁</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E7%94%A8%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81"><span class="toc-number">3.</span> <span class="toc-text">为什么要用分布式锁</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E5%8E%9F%E7%90%86"><span class="toc-number">4.</span> <span class="toc-text">分布式锁原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E5%8F%AF%E8%83%BD%E5%87%BA%E7%8E%B0%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">5.</span> <span class="toc-text">分布式锁可能出现的问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1%E3%80%81%E6%9C%8D%E5%8A%A1%E5%AE%95%E6%9C%BA%E5%AF%BC%E8%87%B4redis%E9%94%81%E6%B0%B8%E4%B8%8D%E5%A4%B1%E6%95%88"><span class="toc-number">5.1.</span> <span class="toc-text">1、服务宕机导致redis锁永不失效</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2%E3%80%81%E7%BA%BF%E7%A8%8B%E8%AF%AF%E5%88%A0%E9%99%A4redis%E9%94%81"><span class="toc-number">5.2.</span> <span class="toc-text">2、线程误删除redis锁</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3%E3%80%81-redis%E9%94%81%E6%8F%90%E5%89%8D%E8%BF%87%E6%9C%9F"><span class="toc-number">5.3.</span> <span class="toc-text">3、 redis锁提前过期</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#redisson%E7%9A%84%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86"><span class="toc-number">5.3.1.</span> <span class="toc-text">redisson的底层原理</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4%E3%80%81%E9%9B%86%E7%BE%A4%E6%A8%A1%E5%BC%8F%E4%B8%8B%E5%93%A8%E5%85%B5%E9%87%8D%E9%80%89%E5%AF%BC%E8%87%B4%E7%9A%84redis%E4%B8%A2%E5%A4%B1"><span class="toc-number">5.4.</span> <span class="toc-text">4、集群模式下哨兵重选导致的redis丢失</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#redLock%E6%80%9D%E8%B7%AF"><span class="toc-number">5.4.1.</span> <span class="toc-text">redLock思路</span></a></li></ol></li></ol></li></ol>
+    </nav>
+  </div>
+</aside>
+
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-文章/redis/基于redis实现的分布式锁实现" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      基于redis实现的分布式锁实现
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="/2021/09/29/%E6%96%87%E7%AB%A0/redis/%E5%9F%BA%E4%BA%8Eredis%E5%AE%9E%E7%8E%B0%E7%9A%84%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E5%AE%9E%E7%8E%B0/" class="article-date">
+	  <time datetime="2021-09-29T12:51:11.000Z" itemprop="datePublished">2021-09-29</time>
+	</a>
+</span>
+        
+  <span class="article-category">
+    <i class="icon icon-folder"></i>
+    <a class="article-category-link" href="/categories/redis/">redis</a>
+  </span>
+
+        
+  <span class="article-tag">
+    <i class="icon icon-tags"></i>
+	<a class="article-tag-link-link" href="/tags/redis/" rel="tag">redis</a>
+  </span>
+
+
+        
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="/2021/09/29/%E6%96%87%E7%AB%A0/redis/%E5%9F%BA%E4%BA%8Eredis%E5%AE%9E%E7%8E%B0%E7%9A%84%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E5%AE%9E%E7%8E%B0/#comments" class="article-comment-link">评论</a></span>
+        
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <h2 id="基于redis实现的分布式锁实现"><a href="#基于redis实现的分布式锁实现" class="headerlink" title="基于redis实现的分布式锁实现"></a>基于redis实现的分布式锁实现</h2><h2 id="什么是锁"><a href="#什么是锁" class="headerlink" title="什么是锁"></a>什么是锁</h2><p>这里需要引入一个话题，什么是锁？其实说到锁在我们的现实生活中非常的常见，比如密码锁，指纹锁，他是为了保证家中物资的安全性的一道保障。而在我们的计算机领域中，其实也有锁的概念，他的目的与上相似，都是为了<strong>保证数据的最终一直性</strong>，当然在单个线程锁是没有太大作用，但是若出现多个线程之间对某个资源进行竞争的时候，那么锁的存在就很有意义。那么刚才所提到的是针对与单体服务的锁（这个有时间可以讲讲基于java中锁的概念），然而随网络用户量的升级，单体服务难以支撑起庞大的访问量，为此我们的服务之间存在了数据以及模块的拆分，之前关于单体服务的锁对我们就不太适用了，因此就会引入到我们今天所需要讲的分布式锁。</p>
+<h2 id="为什么要用分布式锁"><a href="#为什么要用分布式锁" class="headerlink" title="为什么要用分布式锁"></a>为什么要用分布式锁</h2><p>就如之前所说，我们需要<strong>保证数据的一致性</strong>，防止分布式系统中多个线程之间相互进行干扰，我们需要一种分布式协调技术来对这些进程进行调度。而这个分布式协调技术的核心就是来实现这个分布式锁，以用户购买商品下单为例子。</p>
+<ul>
+<li><p>未使用锁</p>
+<p>我们在没有使用任何锁的时候，当用户进行下单的时候我们需要对redis 中的库存进行查询，如果是可以售卖，那么数量就需要进行更新，同时使用mq进行落库。但是，这个地方需要注意的是查询和更新是两部操作（其实可以 使用lua进行原子操作，但是今天主要讲的是分布式锁）</p>
+<p>这样可能会存在bug，如果两个线程同时进行操作的时候，如果库存只有1，两个线程在没有执行第三步的间隙同时进入了第二阶段，都认为可以购买，并进入了第四阶段。 那么就会存在我们所谓的超卖问题（没错的话，估计会被请去喝茶了）</p>
+</li>
+<li><p>使用分布式锁</p>
+<p>这里略过了多个单体服务器多线程操作的过程，其实也和上面的类似，都是相同时间，多个线程对同一数据进行操作。其实有个思路，就是能够保证<strong>全局唯一线程</strong>去获取到锁并对数据进行操作，那么就可以保证全局的安全性问题，能够实现分布式锁的框架很多，如 redis，以及zookeeper甚至是数据库， 我们这里使用redis作为我们的分布式锁，关于redis为什么能实现分布式锁主要是用到了他的<strong>单线程模式,采用队列模式将并发访问转换成串行模式</strong>。</p>
+</li>
+</ul>
+<p>在图中其实可以看到，如果多个服务进行购买商品的时候，在最后会进入到分布式锁的阶段，得到了锁的服务器的那个线程才能执行对扣减操作。其实对应锁的和java中的多线程非常类似，只是从java中的synchronized的锁更改未了redis 的单线程操作，然后操作对象由原来的单体服务器中的多个线程更改为了多个服务器的多个线程进行执行操作。</p>
+<h2 id="分布式锁原理"><a href="#分布式锁原理" class="headerlink" title="分布式锁原理"></a>分布式锁原理</h2><p>既然redis那么好用，那是用的内部那个命令呢，<strong>setNx</strong>,没错，就是一个命令就可以做到我们想要的了。他其实内部包含有两部分操作，1、判断数据是否存在，</p>
+<p>2、如果存在那么不插入数据，如果不存在那么就插入对应的数据。</p>
+<p>具体的执行操作如下。</p>
+<p><img src="https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fimg2018.cnblogs.com%2Fblog%2F1464190%2F201908%2F1464190-20190814094705239-1223189079.png&refer=http%3A%2F%2Fimg2018.cnblogs.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1623039664&t=2255f81493bcf9803fd214711ca7ba63" alt="img"></p>
+<p>图中的Setex 命令为指定的 key 设置值及其过期时间。如果 key 已经存在， SETEX 命令将会替换旧的值。</p>
+<p>这里需要注意</p>
+<p>* 【千万记住】解锁流程不能遗漏，否则导致任务执行一次就永不过期</p>
+<p>* 将加锁代码和任务逻辑放在try，catch代码块，将解锁流程放在finally</p>
+<h2 id="分布式锁可能出现的问题"><a href="#分布式锁可能出现的问题" class="headerlink" title="分布式锁可能出现的问题"></a>分布式锁可能出现的问题</h2><p>虽然这个命令能够完成我们在高并发的数据一致性，但是还是可能会存在一些问题</p>
+<ul>
+<li><p>服务宕机导致redis锁永不失效</p>
+</li>
+<li><p>线程误删除redis锁</p>
+</li>
+<li><p>执行线程操作时redis锁过期</p>
+</li>
+<li><p>集群模式下哨兵重选导致的redis丢失</p>
+</li>
+</ul>
+<p>所以，为了确保分布式锁可用，我们至少要确保锁的实现同时满足以下四个条件：</p>
+<ol>
+<li>互斥性。在任意时刻，只有一个客户端能持有锁。</li>
+<li>不会发生死锁。即使有一个客户端在持有锁的期间崩溃而没有主动解锁，也能保证后续其他客户端能加锁。</li>
+<li>具有容错性。只要大部分的Redis节点正常运行，客户端就可以加锁和解锁。</li>
+<li>解铃还须系铃人。加锁和解锁必须是同一个客户端，客户端自己不能把别人加的锁给解了。</li>
+</ol>
+<p>我们通过代码的方式来对分布式锁出现问题进行节点</p>
+<h3 id="1、服务宕机导致redis锁永不失效"><a href="#1、服务宕机导致redis锁永不失效" class="headerlink" title="1、服务宕机导致redis锁永不失效"></a>1、服务宕机导致redis锁永不失效</h3><ul>
+<li><p>错误代码范例</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">public static void thisIsWrongLock(Jedis jedis, String lockKey, String requestId, int expireTime) &#123;</span><br><span class="line"> </span><br><span class="line">    Long result = jedis.setnx(lockKey, requestId);</span><br><span class="line">    if (result == 1) &#123;</span><br><span class="line">        // 若在这里程序突然崩溃，则无法设置过期时间，将发生死锁</span><br><span class="line">        jedis.expire(lockKey, expireTime);</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>由于设置中 加锁以及设置过期时间为两段操作，在未执行过期时间时服务器宕机，那么这个锁就永远没有办法失效了</p>
+</li>
+<li><p>正确操作</p>
+<p>其实正确操作就是将刚才的两步操作，更改为一步操作，那么操作的方式是什么呢，这就要涉及到另外个语言<strong>LUA</strong>脚本语言，他执行是原子性质操作。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">//上锁脚本</span><br><span class="line">  private static final String LOCK_LUA = &quot;if redis.call(&#x27;setnx&#x27;, KEYS[1], ARGV[1]) == 1 then redis.call(&#x27;expire&#x27;, KEYS[1], ARGV[2]) return &#x27;true&#x27; else return &#x27;false&#x27; end&quot;;</span><br><span class="line"> </span><br><span class="line">  /**</span><br><span class="line">   * </span><br><span class="line">   * @param lockKey 上锁</span><br><span class="line">   * @param time 上锁时间</span><br><span class="line">   * @return</span><br><span class="line">   */</span><br><span class="line">   public boolean lock(String lockKey, int time) &#123;</span><br><span class="line">      RedisScript lockRedisScript = RedisScript.of(LOCK_LUA, String.class);</span><br><span class="line">      List&lt;String&gt; keys = Collections.singletonList(lockKey);</span><br><span class="line">      /**</span><br><span class="line">      * 这里上锁的value是当前线程</span><br><span class="line">      **/</span><br><span class="line">      String flag = redisTemplate.execute(lockRedisScript, argsSerializer, resultSerializer, keys, Thread.currentThread().getName(), String.valueOf(time));</span><br><span class="line">      return Boolean.valueOf(flag);</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line">  </span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="2、线程误删除redis锁"><a href="#2、线程误删除redis锁" class="headerlink" title="2、线程误删除redis锁"></a>2、线程误删除redis锁</h3><ul>
+<li><p>错误示范</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">  </span><br><span class="line">  </span><br><span class="line">public   void wrongReleaseLock1(  String lockKey) &#123;</span><br><span class="line">     redisTemplate.delete(lockKey);</span><br><span class="line"> &#125;</span><br><span class="line">  </span><br></pre></td></tr></table></figure>
+
+<p>没错 看了这个就是直接强制删除对应的redis key值，这样也会出现很多问题。</p>
+</li>
+</ul>
+<ul>
+<li><p>正确示范</p>
+<p>我们可以在进行操作的时候来对key值数据进行判断，判断数据是否是我们之前存放的结果值，一般来结果值也需要一个特定的数据，那想像下，在同一时间执行如何他设置一个唯一性id的value值呢？其实方式也很多，redis的incr或者雪花算法生成的唯一性id,然后使用lua脚本进行执行操作就可以了</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"> //解锁脚本</span><br><span class="line">private static final String UNLOCK_LUA = &quot;if redis.call(&#x27;get&#x27;, KEYS[1]) == ARGV[1] then redis.call(&#x27;del&#x27;, KEYS[1]) end return &#x27;true&#x27; &quot;;</span><br><span class="line">    </span><br><span class="line"></span><br><span class="line">public void unlock(String lockKey, String val) &#123;</span><br><span class="line">    RedisScript unLockRedisScript = RedisScript.of(UNLOCK_LUA, String.class);</span><br><span class="line">    List&lt;String&gt; keys = Collections.singletonList(LOCK_PREFIX + lockKey);</span><br><span class="line">    redisTemplate.execute(unLockRedisScript, argsSerializer, resultSerializer, keys, val);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="3、-redis锁提前过期"><a href="#3、-redis锁提前过期" class="headerlink" title="3、 redis锁提前过期"></a>3、 redis锁提前过期</h3><p>在生产过程中其实可能会出现这样业务代码执行缓慢的情况，而我们在添加的redis的过期太短，导致程序还没有执行完，redis就直接过期从而其他线程会提前拿到对应的锁。针对与解决思路其实设置时间长一点也行，但这里其实可以考虑对锁进行自动续期，需要引入redission客户端进行操作。它内部提供了对应的<strong>看门狗</strong>，作用是在redisson实例被关闭之前，不断的对锁进行延长时间。</p>
+<h4 id="redisson的底层原理"><a href="#redisson的底层原理" class="headerlink" title="redisson的底层原理"></a>redisson的底层原理</h4><p><img src="https://img-blog.csdnimg.cn/20190328230407942.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0ppU2h1aVNhblFpYW5MaQ==,size_16,color_FFFFFF,t_70" alt="img"></p>
+<h3 id="4、集群模式下哨兵重选导致的redis丢失"><a href="#4、集群模式下哨兵重选导致的redis丢失" class="headerlink" title="4、集群模式下哨兵重选导致的redis丢失"></a>4、集群模式下哨兵重选导致的redis丢失</h3><p>如果redis 部署的是集群版本可能会脑裂或者是主master宕机问题。那么就很有可能会出现锁的丢失：</p>
+<ol>
+<li> 客户端1在Redis的master节点上拿到了锁</li>
+<li>Master宕机了，存储锁的key还没有来得及同步到Slave上</li>
+<li>master故障，发生故障转移，slave节点升级为master节点</li>
+<li>客户端2从新的Master获取到了对应同一个资源的锁</li>
+</ol>
+<p>于是，客户端1和客户端2同时持有了同一个资源的锁。锁的安全性被打破了。针对这个问题。Redis作者antirez提出了RedLock算法来解决这个问题</p>
+<h4 id="redLock思路"><a href="#redLock思路" class="headerlink" title="redLock思路"></a>redLock思路</h4><p>大致思路如下</p>
+<p>1、获取当前时间毫秒值 CT</p>
+<p>2、按照顺序向N个节点中执行获取锁的操作，为了保证在某个在某个Redis节点不可用的时候算法能够继续运行，这个获取锁的操作还需要一个超时时间。它应该远小于锁的过期时间（expireTime)）。客户端向某个Redis节点获取锁失败后，应立即尝试下一个Redis节点。这里失败包括Redis节点不可用或者该Redis节点上的锁已经被其他客户端持有。</p>
+<p>3、计算总耗时间，即ET=now()-CT,然后与过期时间进行比对，如果是小于锁过期则对应上锁生效，否则认定失败，同时对所有节点进行锁的删除（无论是否得到都得执行该操作）</p>
+<p>当然，一定是要全部节点获取到才认为上锁成功么？</p>
+<p>​    其实当超过半数redis上请求到锁的时候，才算是真正获取到了锁。如果没有获取到锁，则把部分已锁的redis释放掉。</p>
+<p>今天的分享就到这里了，下期有兴趣可以给大家分享下分布式事物的小知识。</p>
+<p>附录：</p>
+<p><a target="_blank" rel="noopener" href="https://redis.io/topics/distlock">红锁</a></p>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="http://example.com/2021/09/29/%E6%96%87%E7%AB%A0/redis/%E5%9F%BA%E4%BA%8Eredis%E5%AE%9E%E7%8E%B0%E7%9A%84%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E5%AE%9E%E7%8E%B0/" title="基于redis实现的分布式锁实现" target="_blank" rel="external">http://example.com/2021/09/29/文章/redis/基于redis实现的分布式锁实现/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN协议</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://gitee.com/achims" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="/images/OK.jpg" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://gitee.com/achims" target="_blank"><span class="text-dark">achims</span><small class="ml-1x">achims的小木屋</small></a></h3>
+        <div>热爱编程的小同学。</div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    
+    <li class="next">
+      <a href="/2021/09/29/%E6%96%87%E7%AB%A0/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E5%A4%9A%E7%BA%BF%E7%A8%8B%E8%AE%B2%E8%A7%A3/" title="java 多线程理论篇章"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+    <li class="toggle-toc">
+      <a class="toggle-btn collapsed" data-toggle="collapse" href="#collapseToc" aria-expanded="false" title="文章目录" role="button">
+        <span>[&nbsp;</span><span>文章目录</span>
+        <i class="text-collapsed icon icon-anchor"></i>
+        <i class="text-in icon icon-close"></i>
+        <span>]</span>
+      </a>
+    </li>
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>赏</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,facebook,twitter" data-mobile-sites="weibo,qq,qzone"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>感谢您的支持，我会继续努力的!</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="/images/donate/alipayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开支付宝扫一扫，即可进行扫码打赏哦</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="/images/donate/wechatpayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开微信扫一扫，即可进行扫码打赏哦</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> 支付宝</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> 微信支付</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <ul class="social-links">
+    	
+        <li><a href="https://gitee.com/achims" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="https://www.behance.net/cofess" target="_blank" title="Behance" data-toggle=tooltip data-placement=top><i class="icon icon-behance"></i></a></li>
+        
+        <li><a href="/atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="/js/plugin.min.js"></script>
+
+
+<script src="/js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+            UNTITLED: '(未命名)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="/js/insight.js"></script>
+
+
+
+
+
+
+   
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: false,
+    appId: '',
+    appKey: '',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: false
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>
