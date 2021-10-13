@@ -17,10 +17,10 @@
   <meta http-equiv="window-target" content="_top" />
   
   
-  <title>java 多线程理论篇章 | Hexo</title>
+  <title>java多线程之理论篇章 | Hexo</title>
   <meta name="description" content="java 多线程理论篇章 首先 在我们着手多线程的开发的时候需要对下面几个问题进行理解  多线程的目的是为了什么？ 什么时候会导致线程不安全，他的本质是什么？ Java是怎么解决并发问题的?  线程安全有哪些实现思路?  1、多线程的目的以及带来的问题​        其实目的也很明确，在网络进化的过程当中，原有的单CPU，单内核的机器没有办法满足我们的需求，比如一个3GHz的CPU，意味着每秒可">
 <meta property="og:type" content="article">
-<meta property="og:title" content="java 多线程理论篇章">
+<meta property="og:title" content="java多线程之理论篇章">
 <meta property="og:url" content="http://example.com/2021/09/29/%E6%96%87%E7%AB%A0/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E5%A4%9A%E7%BA%BF%E7%A8%8B%E8%AE%B2%E8%A7%A3/index.html">
 <meta property="og:site_name" content="achims的小木屋">
 <meta property="og:description" content="java 多线程理论篇章 首先 在我们着手多线程的开发的时候需要对下面几个问题进行理解  多线程的目的是为了什么？ 什么时候会导致线程不安全，他的本质是什么？ Java是怎么解决并发问题的?  线程安全有哪些实现思路?  1、多线程的目的以及带来的问题​        其实目的也很明确，在网络进化的过程当中，原有的单CPU，单内核的机器没有办法满足我们的需求，比如一个3GHz的CPU，意味着每秒可">
@@ -28,7 +28,7 @@
 <meta property="og:image" content="https://www.pdai.tech/_images/jvm/java-jmm-3.png">
 <meta property="og:image" content="https://www.pdai.tech/_images/jvm/java-jmm-4.png">
 <meta property="article:published_time" content="2021-09-29T12:51:11.000Z">
-<meta property="article:modified_time" content="2021-10-05T14:57:42.588Z">
+<meta property="article:modified_time" content="2021-10-13T07:47:56.622Z">
 <meta property="article:author" content="achims">
 <meta property="article:tag" content="多线程">
 <meta name="twitter:card" content="summary">
@@ -218,7 +218,7 @@
   <div class="widget">
     <h3 class="widget-title">分类</h3>
     <div class="widget-body">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/hexo/">hexo</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A4%9A%E7%BA%BF%E7%A8%8B/">多线程</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%97%A5%E5%BF%97/">日志</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BB%84%E4%BB%B6/">组件</a><span class="category-list-count">2</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/hexo/">hexo</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/kafka-mq/">kafka mq</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/redis/">redis</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A4%9A%E7%BA%BF%E7%A8%8B/">多线程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%97%A5%E5%BF%97/">日志</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%BB%84%E4%BB%B6/">组件</a><span class="category-list-count">2</span></li></ul>
     </div>
   </div>
 
@@ -228,7 +228,7 @@
   <div class="widget">
     <h3 class="widget-title">标签</h3>
     <div class="widget-body">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/hexo/" rel="tag">hexo</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/redis/" rel="tag">redis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" rel="tag">多线程</a><span class="tag-list-count">3</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%97%A5%E5%BF%97%E6%A1%86%E6%9E%B6/" rel="tag">日志框架</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BB%84%E4%BB%B6/" rel="tag">组件</a><span class="tag-list-count">2</span></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/hexo/" rel="tag">hexo</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kafka/" rel="tag">kafka</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/redis/" rel="tag">redis</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" rel="tag">多线程</a><span class="tag-list-count">2</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%97%A5%E5%BF%97%E6%A1%86%E6%9E%B6/" rel="tag">日志框架</a><span class="tag-list-count">1</span></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%BB%84%E4%BB%B6/" rel="tag">组件</a><span class="tag-list-count">2</span></li></ul>
     </div>
   </div>
 
@@ -238,7 +238,7 @@
   <div class="widget">
     <h3 class="widget-title">标签云</h3>
     <div class="widget-body tagcloud">
-      <a href="/tags/hexo/" style="font-size: 13px;">hexo</a> <a href="/tags/redis/" style="font-size: 13px;">redis</a> <a href="/tags/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" style="font-size: 14px;">多线程</a> <a href="/tags/%E6%97%A5%E5%BF%97%E6%A1%86%E6%9E%B6/" style="font-size: 13px;">日志框架</a> <a href="/tags/%E7%BB%84%E4%BB%B6/" style="font-size: 13.5px;">组件</a>
+      <a href="/tags/hexo/" style="font-size: 13px;">hexo</a> <a href="/tags/kafka/" style="font-size: 13px;">kafka</a> <a href="/tags/redis/" style="font-size: 13px;">redis</a> <a href="/tags/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" style="font-size: 14px;">多线程</a> <a href="/tags/%E6%97%A5%E5%BF%97%E6%A1%86%E6%9E%B6/" style="font-size: 13px;">日志框架</a> <a href="/tags/%E7%BB%84%E4%BB%B6/" style="font-size: 14px;">组件</a>
     </div>
   </div>
 
@@ -278,10 +278,10 @@
             
             <div class="item-inner">
               <p class="item-category">
-                <a class="category-link" href="/categories/%E5%A4%9A%E7%BA%BF%E7%A8%8B/">多线程</a>
+                <a class="category-link" href="/categories/kafka-mq/">kafka mq</a>
               </p>
               <p class="item-title">
-                <a href="/2021/09/29/%E6%96%87%E7%AB%A0/%E5%A4%9A%E7%BA%BF%E7%A8%8B/ThreadLocal/" class="title">ThreadLocal</a>
+                <a href="/2021/09/29/%E6%96%87%E7%AB%A0/mq/Kafka/" class="title">kafka</a>
               </p>
               <p class="item-date">
                 <time datetime="2021-09-29T12:51:11.000Z" itemprop="datePublished">2021-09-29</time>
@@ -311,7 +311,7 @@
                 <a class="category-link" href="/categories/%E5%A4%9A%E7%BA%BF%E7%A8%8B/">多线程</a>
               </p>
               <p class="item-title">
-                <a href="/2021/09/29/%E6%96%87%E7%AB%A0/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E5%A4%9A%E7%BA%BF%E7%A8%8B%E8%AE%B2%E8%A7%A3/" class="title">java 多线程理论篇章</a>
+                <a href="/2021/09/29/%E6%96%87%E7%AB%A0/%E5%A4%9A%E7%BA%BF%E7%A8%8B/ThreadLocal/" class="title">ThreadLocal</a>
               </p>
               <p class="item-date">
                 <time datetime="2021-09-29T12:51:11.000Z" itemprop="datePublished">2021-09-29</time>
@@ -326,7 +326,7 @@
                 <a class="category-link" href="/categories/%E5%A4%9A%E7%BA%BF%E7%A8%8B/">多线程</a>
               </p>
               <p class="item-title">
-                <a href="/2021/09/29/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E7%90%86%E8%AE%BA%E7%AF%87%EF%BC%88%E4%B8%80%EF%BC%89/" class="title">并发编程理论篇（一）</a>
+                <a href="/2021/09/29/%E6%96%87%E7%AB%A0/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E5%A4%9A%E7%BA%BF%E7%A8%8B%E8%AE%B2%E8%A7%A3/" class="title">java多线程之理论篇章</a>
               </p>
               <p class="item-date">
                 <time datetime="2021-09-29T12:51:11.000Z" itemprop="datePublished">2021-09-29</time>
@@ -363,7 +363,7 @@
         
   
     <h1 class="article-title" itemprop="name">
-      java 多线程理论篇章
+      java多线程之理论篇章
     </h1>
   
 
@@ -519,7 +519,7 @@
     
     <li class="post-copyright-link hidden-xs">
       <strong>本文链接：</strong>
-      <a href="http://example.com/2021/09/29/%E6%96%87%E7%AB%A0/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E5%A4%9A%E7%BA%BF%E7%A8%8B%E8%AE%B2%E8%A7%A3/" title="java 多线程理论篇章" target="_blank" rel="external">http://example.com/2021/09/29/文章/多线程/多线程讲解/</a>
+      <a href="http://example.com/2021/09/29/%E6%96%87%E7%AB%A0/%E5%A4%9A%E7%BA%BF%E7%A8%8B/%E5%A4%9A%E7%BA%BF%E7%A8%8B%E8%AE%B2%E8%A7%A3/" title="java多线程之理论篇章" target="_blank" rel="external">http://example.com/2021/09/29/文章/多线程/多线程讲解/</a>
     </li>
     
     <li class="post-copyright-license">
@@ -566,12 +566,12 @@
   <ul class="pager pull-left">
     
     <li class="prev">
-      <a href="/2021/09/29/%E6%96%87%E7%AB%A0/redis/%E5%9F%BA%E4%BA%8Eredis%E5%AE%9E%E7%8E%B0%E7%9A%84%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E5%AE%9E%E7%8E%B0/" title="基于redis实现的分布式锁实现"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;上一篇</span></a>
+      <a href="/2021/09/29/%E6%96%87%E7%AB%A0/%E5%A4%9A%E7%BA%BF%E7%A8%8B/ThreadLocal/" title="ThreadLocal"><i class="icon icon-angle-left" aria-hidden="true"></i><span>&nbsp;&nbsp;上一篇</span></a>
     </li>
     
     
     <li class="next">
-      <a href="/2021/09/29/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E7%90%86%E8%AE%BA%E7%AF%87%EF%BC%88%E4%B8%80%EF%BC%89/" title="并发编程理论篇（一）"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+      <a href="/2021/08/29/%E7%BB%84%E4%BB%B6/maven/" title="maven简介"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
     </li>
     
     
